@@ -41,6 +41,10 @@ vignettes/*.pdf
 # old data
 old_versions/
 
+# data
+
+data/
+
 # excel and word files
 *.xlsx
 *.docx
@@ -67,3 +71,4 @@ Backup of *.doc*
 
 # Visio autosave temporary files
 *.~vsd*
+
