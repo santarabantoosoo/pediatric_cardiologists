@@ -1,0 +1,131 @@
+---
+title: "Pediatric cardiologists"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+editor_options:
+  chunk_output_type: console
+---
+
+```{r}
+# imp links
+
+# https://github.com/wmurphyrd/MultipleResponseR a nice function for plotting multiple response variables
+```
+
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, comment = NA, fig.height = 15, fig.width = 15)
+```
+
+```{r}
+library(tidyverse)
+library(funModeling)
+library(readxl)
+library(splitstackshape)
+
+multi.freq.table = function(data, sep="", dropzero=FALSE, clean=TRUE) {
+  # Takes boolean multiple-response data and tabulates it according
+  #   to the possible combinations of each variable.
+  #
+  # See: http://stackoverflow.com/q/11348391/1270695
+
+  counts = data.frame(table(data))
+  N = ncol(counts)
+  counts$Combn = apply(counts[-N] == 1, 1, 
+                       function(x) paste(names(counts[-N])[x],
+                                         collapse=sep))
+  if (isTRUE(dropzero)) {
+    counts = counts[counts$Freq != 0, ]
+  } else if (!isTRUE(dropzero)) {
+    counts = counts
+  }
+  if (isTRUE(clean)) {
+    counts = data.frame(Combn = counts$Combn, Freq = counts$Freq)
+  } 
+  counts
+}
+
+
+data <- read_excel("Pediatric Cardiologists' Knowledge & Cardiac Surgeons  Practices regarding Prevention of Infective Endocarditis of Oral Origin (Responses) (1).xlsx")
+
+names(data) <- make.names(names(data),unique = T)
+
+funModeling::freq(data)
+
+foo <- data %>% 
+  select(For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled..)
+
+fes <- cSplit_e(foo, 'For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled..', ',', type= 'character', fill=0, drop=T)
+
+multi.freq.table(foo, sep = ",")
+
+library(questionr)
+g <- data.frame(multi.table(fes))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled.", "")
+```
+
+
+```{r}
+foo1 <- data %>% 
+  select(According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.)
+
+fes1 <- cSplit_e(foo1, 'According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.', ',', type= 'character', fill=0, drop=T)
+
+g <- data.frame(multi.table(fes1))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.", "")
+
+```
+
+
+```{r}
+foo1 <- data %>% 
+  select(What.is..are.the.source.s..of.your.oral.health.knowledge...Multiple.responses.enabled..)
+
+fes1 <- cSplit_e(foo1, 'What.is..are.the.source.s..of.your.oral.health.knowledge...Multiple.responses.enabled..', ',', type= 'character', fill=0, drop=T)
+
+g <- data.frame(multi.table(fes1))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "What.is..are.the.source.s..of.your.oral.health.knowledge...Multiple.responses.enabled..", "")
+
+```
+
+```{r}
+
+
+foo1 <- data %>% 
+  select(When.do.you.usually.REFER.a.child.with.a.congenital.heart.disease.for.oral.health.assessment.by.a.dentist.....Multiple.responses.enabled.)
+
+fes1 <- cSplit_e(foo1, 'When.do.you.usually.REFER.a.child.with.a.congenital.heart.disease.for.oral.health.assessment.by.a.dentist.....Multiple.responses.enabled.', ',', type= 'character', fill=0, drop=T)
+
+g <- data.frame(multi.table(fes1))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "When.do.you.usually.REFER.a.child.with.a.congenital.heart.disease.for.oral.health.assessment.by.a.dentist.....Multiple.responses.enabled.", "")
+
+
+```
+
+```{r}
+
+foo1 <- data %>% 
+  select(Type.of.Medical.practice...Multiple.responses.enabled.)
+
+fes1 <- cSplit_e(foo1, 'Type.of.Medical.practice...Multiple.responses.enabled.', ',', type= 'character', fill=0, drop=T)
+
+g <- data.frame(multi.table(fes1))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "Type.of.Medical.practice...Multiple.responses.enabled.", "")
+
+```
+

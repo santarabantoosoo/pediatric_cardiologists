@@ -37,3 +37,10 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# old data
+old_versions/
+
+# current data
+.Pediatric Cardiologists' Knowledge & Cardiac Surgeons  Practices regarding Prevention of Infective Endocarditis of Oral Origin (Responses) (1) edited.xlsx
+.questions (1) editted.docx
