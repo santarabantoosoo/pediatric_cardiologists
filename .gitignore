@@ -41,10 +41,9 @@ vignettes/*.pdf
 # old data
 old_versions/
 
-# current data
-.questions.docx
-.excel.xlsx
+# excel and word files
+*.xlsx
+*.docx
 
 # old R files
-
 .ped_card.R
