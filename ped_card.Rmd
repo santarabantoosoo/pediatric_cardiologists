@@ -6,6 +6,12 @@ editor_options:
   chunk_output_type: console
 ---
 
+
+```{r global options, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, comment = NA, fig.height = 15, fig.width = 15)
+```
+
+
 ```{r}
 # imp links
 
@@ -13,14 +19,16 @@ editor_options:
 ```
 
 
-```{r global options, include = FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, comment = NA, fig.height = 15, fig.width = 15)
-```
-
 ```{r}
-library(tidyverse)
+
 library(funModeling)
+library(flextable)
+library(questionr)
+library(tidyverse)
+library(gtsummary)
+library(janitor)
 library(readxl)
+library(labelled)
 library(splitstackshape)
 
 multi.freq.table = function(data, sep="", dropzero=FALSE, clean=TRUE) {
@@ -46,27 +54,78 @@ multi.freq.table = function(data, sep="", dropzero=FALSE, clean=TRUE) {
 }
 
 
-data <- read_excel("Pediatric Cardiologists' Knowledge & Cardiac Surgeons  Practices regarding Prevention of Infective Endocarditis of Oral Origin (Responses) (1).xlsx")
+data <- read_excel("data/excel.xlsx")
 
 names(data) <- make.names(names(data),unique = T)
 
-funModeling::freq(data)
+#funModeling::freq(data)
 
-foo <- data %>% 
-  select(For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled..)
+rmdtbl <- function(df){
+  
+tbl_alpha <- autofit(theme_vanilla(flextable(df)))
 
-fes <- cSplit_e(foo, 'For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled..', ',', type= 'character', fill=0, drop=T)
+tbl_alpha <- bg(tbl_alpha, bg = "blue", part = "header")
+tbl_alpha <- color(tbl_alpha, color = "white", part = "header")
 
-multi.freq.table(foo, sep = ",")
+bes <- align(tbl_alpha, align = "center")
 
-library(questionr)
-g <- data.frame(multi.table(fes))
+bes <- align_text_col(bes, align = "center")
+return(bes)
 
-g <- rownames_to_column(g)
+}
 
-g$rowname <- str_replace_all(g$rowname, "For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled.", "")
 ```
 
+```{r cleaning}
+#table(data$Country.of.Practice...Multiple.responses.enabled.)
+
+# data <- data %>%
+#   mutate(country = country$Country_of_practice) %>% 
+#   filter(country == "Egypt", !is.na(Degree)) %>% 
+#   mutate(country = ifelse(Country.of.Practice...Multiple.responses.enabled. == "Egypt", "Egypt only", "Egypt and others"))
+
+#data$country <- fct_lump_min(data$country, 3)
+
+```
+
+
+# Table 1 Participants' demographics
+
+```{r}
+tbl1_sum <- data %>% 
+  dplyr::select(Age., Gender., Job.Title., Specialty., Highest.degree.attained...If.you.choose..other...please.specify., Years.of.experience.in.Pediatric.Cardiology...Cardiac.Surgery., Country.of.Practice...Multiple.responses.enabled.)
+
+
+tbl_summary(tbl1_sum, missing = "no")  %>% bold_labels() %>% italicize_levels() %>% gtsummary::as_flextable() 
+
+```
+
+
+# Table 2 
+
+```{r}
+tbl2_sum <- data %>% 
+  dplyr::select(X.When.do.you.usually.ASSESS.oral.health., What.type.of.dental.specialty.would.your.refer.a.patient.to.,
+                X.In.which.practice.setting.do.you.usually.refer.a.patient.at.risk.of.infective.endocarditis.for.oral.health.assessment.BEFORE.cardiac.surgeries.,
+                When.do.you.usually.refer.a.patient.before.a.cardiac.surgery.,
+                Have.you.ever.had.a.cardiac.surgery.cancelled.postponed.due.to.oral.infection.,
+                Have.you.ever.encountered.Infective.endocarditis.from.oral.origin.,
+                What.guidelines.do.you.follow.for.prevention.of.infective.endocarditis.,
+                What.do.you.think.is.the.risk.of.having.tooth.decay.in.children.with.heart.diseases.compared.to.healthy.children., 
+                Do.you.wish.to.be.offered.oral.health.education.related.to.your.field.of.practice.,
+                How.do.you.usually.prescribe.an.antibiotic.prophylaxis.before.invasive..dental.procedures.,generic.name, 
+                Antibiotic.category)
+
+
+
+tbl_summary(tbl2_sum, missing = "no")  %>% add_n %>% bold_labels() %>% italicize_levels() %>% gtsummary::as_flextable() 
+
+```
+
+
+Next I will present the tables for the questions that have multiple response enabled. For now, these questions will not be grouped together as I am waiting for the grouping question to be determined.
+
+#### According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.
 
 ```{r}
 foo1 <- data %>% 
@@ -74,14 +133,73 @@ foo1 <- data %>%
 
 fes1 <- cSplit_e(foo1, 'According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.', ',', type= 'character', fill=0, drop=T)
 
-g <- data.frame(multi.table(fes1))
+cause <- data.frame(multi.table(fes1))
 
-g <- rownames_to_column(g)
+cause <- rownames_to_column(cause)
 
-g$rowname <- str_replace_all(g$rowname, "According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.", "")
+cause$rowname <- str_replace_all(cause$rowname, "According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled._", "")
+
+cause$rowname <- fct_collapse(cause$rowname, 
+                  "Chewing - Tooth brushing" = c("Chewing.", "Tooth brushing."),
+                  "Invasive dental treatments" = c("Invasive dental treatments ( eg. surgeries)", "Invasive dental treatments."))
+
+cause <- cause %>% 
+  group_by(rowname) %>% 
+  summarise(n = sum(n))
+
+names(cause) <- c("Endocarditis cause", "N")
+
+
+rmdtbl(cause)
+
+
+# mltp_one_ques <- function(mrv, title, title_und, name){ 
+#   
+#   # converts a multiple response question to a summary table 
+#   
+#   foo1 <- data %>% 
+#   select(!!mrv)
+#   
+#   fes1 <- cSplit_e(foo1, title, ',', type= 'character', fill=0, drop=T)
+#   
+#   df <- data.frame(multi.table(fes1))
+#   
+#   df <- rownames_to_column(df)
+#   df$rowname <- str_replace_all(df$rowname, title_und, "")
+#   
+#   names(cause) <- c(name, "N")
+#  
+#   return (cause)
+#   #rmdtbl(cause)
+# 
+# }  
+# 
+# cause <- mltp_one_ques(quo(According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.), "According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.", "According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled.", "cause")
+
+
+# cause$rowname <- str_replace_all(cause$rowname, "According.to.your.knowledge..Infective.endocarditis.of.oral.origin.can.be.caused.by...Multiple.responses.enabled._", "")
+# 
+# 
+#   df1 <- data %>% 
+#   dplyr::select(!!mrv, !!gpvar) %>% cSplit_e(1, ',', type= 'character', fill=0, drop=T)
+# names(df1) <-  sub('.*_', '', names(df1))
+# 
+# df2 <- data.frame(cross.multi.table(df1[,names(df1)[2:length(names(df1))]], 
+#                   normal_var, true.codes=list("Y"), freq=T, tfreq="row", n=T, digits = 0)) 
+# df2 <- df2 %>% 
+#   rownames_to_column()
+#   
+# return(df2)
+# }
+# 
+
+
+# inf_cause <- mresp_gnrl(quo(ie_cause), quo(Years.of.experience.in.pediatric.dentistry), data$Years.of.experience.in.pediatric.dentistry)
+
 
 ```
 
+#### What.is..are.the.source.s..of.your.oral.health.knowledge...Multiple.responses.enabled..
 
 ```{r}
 foo1 <- data %>% 
@@ -93,12 +211,25 @@ g <- data.frame(multi.table(fes1))
 
 g <- rownames_to_column(g)
 
-g$rowname <- str_replace_all(g$rowname, "What.is..are.the.source.s..of.your.oral.health.knowledge...Multiple.responses.enabled..", "")
+g$rowname <- str_replace_all(g$rowname, "What.is..are.the.source.s..of.your.oral.health.knowledge...Multiple.responses.enabled.._", "")
 
+
+g$rowname <-  fct_collapse(g$rowname,
+                           "medical sources,eg websites and conferences" = 
+                             c("Dental websites.", "Medical conferences.", "Medical websites.")) 
+info_source <- g %>% 
+  group_by(rowname) %>% 
+  summarise(N = sum(n))
+
+names(info_source) <- c("Knowledge source", "N")
+
+rmdtbl(info_source)
 ```
 
-```{r}
 
+#### When.do.you.usually.REFER.a.child.with.a.congenital.heart.disease.for.oral.health.assessment.by.a.dentist.....Multiple.responses.enabled.
+
+```{r}
 
 foo1 <- data %>% 
   select(When.do.you.usually.REFER.a.child.with.a.congenital.heart.disease.for.oral.health.assessment.by.a.dentist.....Multiple.responses.enabled.)
@@ -109,10 +240,17 @@ g <- data.frame(multi.table(fes1))
 
 g <- rownames_to_column(g)
 
-g$rowname <- str_replace_all(g$rowname, "When.do.you.usually.REFER.a.child.with.a.congenital.heart.disease.for.oral.health.assessment.by.a.dentist.....Multiple.responses.enabled.", "")
+g$rowname <- str_replace_all(g$rowname, "When.do.you.usually.REFER.a.child.with.a.congenital.heart.disease.for.oral.health.assessment.by.a.dentist.....Multiple.responses.enabled._", "")
 
+g <- g %>% 
+  dplyr::select(-X.multi)
 
+names(g) <- c("When to refer to a dentist", "N")
+
+rmdtbl(g)
 ```
+
+#### Type.of.Medical.practice...Multiple.responses.enabled._
 
 ```{r}
 
@@ -125,7 +263,109 @@ g <- data.frame(multi.table(fes1))
 
 g <- rownames_to_column(g)
 
-g$rowname <- str_replace_all(g$rowname, "Type.of.Medical.practice...Multiple.responses.enabled.", "")
+g$rowname <- str_replace_all(g$rowname, "Type.of.Medical.practice...Multiple.responses.enabled._", "")
 
+g <- g %>% 
+  dplyr::select(-X.multi)
+
+names(g) <- c("Type of medical practice", "N")
+
+rmdtbl(g)
+```
+
+
+#### What.are.the.reason.s..for.not.checking.oral.health.regularly....Multiple.responses.enabled
+
+```{r}
+foo1 <- data %>% 
+  select(What.are.the.reason.s..for.not.checking.oral.health.regularly....Multiple.responses.enabled..)
+
+fes1 <- cSplit_e(foo1, 'What.are.the.reason.s..for.not.checking.oral.health.regularly....Multiple.responses.enabled..', ',', type= 'character', fill=0, drop=T)
+
+g <- data.frame(multi.table(fes1))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "What.are.the.reason.s..for.not.checking.oral.health.regularly....Multiple.responses.enabled.._", "")
+
+g <- g %>% 
+  dplyr::select(-X.multi)
+
+names(g) <- c("Reasons for not checking oral health regularly", "N")
+
+rmdtbl(g)
+```
+
+
+#### What.are.the.oral.health.issues.that.you.usually.discuss.with.your.patients...Multiple.responses.enabled..
+
+
+```{r}
+foo1 <- data %>% 
+  select(What.are.the.oral.health.issues.that.you.usually.discuss.with.your.patients...Multiple.responses.enabled..)
+
+fes1 <- cSplit_e(foo1, 'What.are.the.oral.health.issues.that.you.usually.discuss.with.your.patients...Multiple.responses.enabled..', ',', type= 'character', fill=0, drop=T)
+
+
+g <- data.frame(multi.table(fes1))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "What.are.the.oral.health.issues.that.you.usually.discuss.with.your.patients...Multiple.responses.enabled.._", "")
+
+g <- g %>% 
+  dplyr::select(-X.multi)
+
+names(g) <- c("Oral health issues discussed with patients", "N")
+
+rmdtbl(g)
+
+```
+
+#### How.usually.a.tooth.decay.looks.like...Multiple.responses.enabled.
+
+```{r}
+foo1 <- data %>% 
+  select(How.usually.a.tooth.decay.looks.like...Multiple.responses.enabled.)
+
+fes1 <- cSplit_e(foo1, 'How.usually.a.tooth.decay.looks.like...Multiple.responses.enabled.', ',', type= 'character', fill=0, drop=T)
+
+g <- data.frame(multi.table(fes1))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "How.usually.a.tooth.decay.looks.like...Multiple.responses.enabled._", "")
+
+g <- g %>% 
+  dplyr::select(-X.multi)
+
+names(g) <- c("Tooth decay appearance", "N")
+
+rmdtbl(g)
+
+
+```
+
+#### For whom do you usually prescribe prophylactic antibiotics before invasive dental procedures Multiple responses enabled  
+
+
+```{r}
+foo <- data %>% 
+  select(For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled..)
+
+fes <- cSplit_e(foo, 'For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled..', ',', type= 'character', fill=0, drop=T)
+
+g <- data.frame(multi.table(fes))
+
+g <- rownames_to_column(g)
+
+g$rowname <- str_replace_all(g$rowname, "For.whom.do.you.usually.prescribe.prophylactic.antibiotics.before.invasive.dental.procedures...Multiple.responses.enabled.._", "")
+
+g <- g %>% 
+  dplyr::select(-X.multi)
+
+names(g) <- c("Prophylactic antibiotic precribed to", "N")
+3
+rmdtbl(g)
 ```
 
